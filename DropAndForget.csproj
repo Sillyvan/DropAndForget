@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <NoWarn>$(NoWarn);CS1591;CS8632;CS8766;CS8767;CS8615;IDE0005</NoWarn>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <StartupObject>DropAndForget.Program</StartupObject>
+    <AssemblyName>DropAndForget</AssemblyName>
+    <Product>DropAndForget</Product>
+    <Description>Desktop app for simple Cloudflare R2 file drops and sync.</Description>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <PublishAot>true</PublishAot>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <StackTraceSupport>false</StackTraceSupport>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <ApplicationIcon>Assets/logo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.0.0-rc2" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.0.0-rc2" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.0-rc2" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.0-rc2" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.19.1" />
+    <PackageReference Include="Lucide.Avalonia" Version="0.1.63" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="MinVer" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="PDFiumCore" Version="148.0.7763" />
+    <PackageReference Include="NSec.Cryptography" Version="25.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/logo.ico" />
+    <AvaloniaXaml Include="UI/DataGrid/**/*.xaml" />
+    <Content Include="Assets/logo.icns">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Assets/logo.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="lib-src/**" />
+    <EmbeddedResource Remove="lib-src/**" />
+    <None Remove="lib-src/**" />
+    <AvaloniaResource Remove="lib-src/**" />
+    <AvaloniaXaml Remove="lib-src/**" />
+    <AdditionalFiles Remove="lib-src/**" />
+    <Page Remove="lib-src/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="DropAndForget.Tests/**" />
+    <EmbeddedResource Remove="DropAndForget.Tests/**" />
+    <None Remove="DropAndForget.Tests/**" />
+    <AvaloniaResource Remove="DropAndForget.Tests/**" />
+    <AvaloniaXaml Remove="DropAndForget.Tests/**" />
+    <AdditionalFiles Remove="DropAndForget.Tests/**" />
+    <Page Remove="DropAndForget.Tests/**" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,382 @@
+name: release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Release tag to publish assets for
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag_name }}
+  APP_NAME: DropAndForget
+  APP_PROJECT: DropAndForget.csproj
+  TEST_PROJECT: DropAndForget.Tests/DropAndForget.Tests.csproj
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test "$TEST_PROJECT" --configuration Release
+
+  build-windows:
+    runs-on: windows-latest
+    needs: verify
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+          - rid: win-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Set version
+        shell: pwsh
+        run: |
+          $version = "${{ env.RELEASE_TAG }}" -replace '^v', ''
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Publish ${{ matrix.rid }}
+        run: dotnet publish "$env:APP_PROJECT" -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -o "artifacts/${{ matrix.rid }}"
+
+      - name: Remove symbol files
+        shell: pwsh
+        run: |
+          Get-ChildItem "artifacts/${{ matrix.rid }}" -Filter *.pdb -Recurse -File | Remove-Item -Force
+          Get-ChildItem "artifacts/${{ matrix.rid }}" -Filter *.dbg -Recurse -File | Remove-Item -Force
+          Get-ChildItem "artifacts/${{ matrix.rid }}" -Filter *.dSYM -Recurse -Directory | Remove-Item -Recurse -Force
+
+      - name: Archive ${{ matrix.rid }}
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "artifacts/${{ matrix.rid }}/*" -DestinationPath "artifacts/$env:APP_NAME-$env:APP_VERSION-${{ matrix.rid }}.zip" -Force
+
+      - name: Create checksums ${{ matrix.rid }}
+        shell: pwsh
+        run: |
+          $asset = "artifacts/$env:APP_NAME-$env:APP_VERSION-${{ matrix.rid }}.zip"
+          $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $asset -Leaf)" | Out-File -FilePath "$asset.sha256" -Encoding ascii
+
+      - name: Generate artifact attestation ${{ matrix.rid }}
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-path: "artifacts/${{ env.APP_NAME }}-*-${{ matrix.rid }}.zip"
+
+      - name: Save attestation bundle ${{ matrix.rid }}
+        shell: pwsh
+        run: |
+          Copy-Item "${{ steps.attest.outputs.bundle-path }}" "artifacts/$env:APP_NAME-$env:APP_VERSION-${{ matrix.rid }}.attestation.jsonl"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release upload "${{ env.RELEASE_TAG }}" "artifacts/$env:APP_NAME-$env:APP_VERSION-${{ matrix.rid }}.zip" "artifacts/$env:APP_NAME-$env:APP_VERSION-${{ matrix.rid }}.zip.sha256" "artifacts/$env:APP_NAME-$env:APP_VERSION-${{ matrix.rid }}.attestation.jsonl" --clobber
+
+  build-macos:
+    runs-on: macos-latest
+    needs: verify
+    strategy:
+      matrix:
+        include:
+          - rid: osx-arm64
+            asset_suffix: macos-arm64
+          - rid: osx-x64
+            asset_suffix: macos-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Set version
+        run: |
+          version="${{ env.RELEASE_TAG }}"
+          version="${version#v}"
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Publish ${{ matrix.rid }}
+        run: dotnet publish "$APP_PROJECT" -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishAot=true -o "artifacts/${{ matrix.rid }}/publish"
+
+      - name: Build .app bundle
+        run: |
+          chmod +x "scripts/package-macos-app.sh"
+          ./scripts/package-macos-app.sh "$APP_NAME" "$APP_VERSION" "artifacts/${{ matrix.rid }}/publish" "artifacts/${{ matrix.rid }}" "com.dropandforget.app"
+
+      - name: Create dmg
+        run: |
+          hdiutil create -volname "$APP_NAME" -srcfolder "artifacts/${{ matrix.rid }}/$APP_NAME.app" -ov -format UDZO "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.asset_suffix }}.dmg"
+
+      - name: Create checksums ${{ matrix.rid }}
+        run: |
+          asset="artifacts/$APP_NAME-$APP_VERSION-${{ matrix.asset_suffix }}.dmg"
+          shasum -a 256 "$asset" > "$asset.sha256"
+
+      - name: Generate artifact attestation ${{ matrix.rid }}
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-path: "artifacts/${{ env.APP_NAME }}-*-${{ matrix.asset_suffix }}.dmg"
+
+      - name: Save attestation bundle ${{ matrix.rid }}
+        run: |
+          cp "${{ steps.attest.outputs.bundle-path }}" "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.asset_suffix }}.attestation.jsonl"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.asset_suffix }}.dmg" ]; then
+            gh release upload "${{ env.RELEASE_TAG }}" "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.asset_suffix }}.dmg" "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.asset_suffix }}.dmg.sha256" "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.asset_suffix }}.attestation.jsonl" --clobber
+          fi
+
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: verify
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+          - rid: linux-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Set version
+        run: |
+          version="${{ env.RELEASE_TAG }}"
+          version="${version#v}"
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Install rpm tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Install linux-arm64 AOT toolchain
+        if: matrix.rid == 'linux-arm64'
+        run: |
+          sudo dpkg --add-architecture arm64
+
+          # Use an isolated apt source dir so runner-managed mirror config cannot
+          # reintroduce arm64 lookups against security.ubuntu.com.
+          apt_sources_dir="$RUNNER_TEMP/apt-sources"
+          sudo rm -rf "$apt_sources_dir"
+          sudo mkdir -p "$apt_sources_dir"
+
+          sudo tee "$apt_sources_dir/ubuntu-amd64.sources" > /dev/null <<'EOF'
+          Types: deb
+          URIs: http://azure.archive.ubuntu.com/ubuntu/
+          Suites: noble noble-updates noble-backports noble-security
+          Components: main universe restricted multiverse
+          Architectures: amd64
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          EOF
+
+          sudo tee "$apt_sources_dir/ubuntu-arm64.sources" > /dev/null <<'EOF'
+          Types: deb
+          URIs: http://ports.ubuntu.com/ubuntu-ports/
+          Suites: noble noble-updates noble-backports noble-security
+          Components: main universe restricted multiverse
+          Architectures: arm64
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          EOF
+
+          sudo apt-get -o Dir::Etc::sourcelist=/dev/null -o Dir::Etc::sourceparts="$apt_sources_dir" update
+          sudo apt-get -o Dir::Etc::sourcelist=/dev/null -o Dir::Etc::sourceparts="$apt_sources_dir" install -y clang llvm binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu zlib1g-dev:arm64
+
+      - name: Publish ${{ matrix.rid }}
+        run: dotnet publish "$APP_PROJECT" -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -o "artifacts/${{ matrix.rid }}"
+
+      - name: Remove symbol files
+        run: |
+          find "artifacts/${{ matrix.rid }}" \( -name '*.pdb' -o -name '*.dbg' \) -type f -delete
+          find "artifacts/${{ matrix.rid }}" -name '*.dSYM' -type d -prune -exec rm -rf {} +
+
+      - name: Build Linux package layout
+        run: |
+          chmod +x "scripts/package-linux-app.sh"
+          ./scripts/package-linux-app.sh "$APP_NAME" "$APP_VERSION" "artifacts/${{ matrix.rid }}" "artifacts/${{ matrix.rid }}" "dropandforget"
+
+      - name: Archive ${{ matrix.rid }}
+        run: |
+          tar -C "artifacts/${{ matrix.rid }}/package-root" -czf "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.tar.gz" .
+
+      - name: Build linux packages
+        run: |
+          chmod +x "scripts/build-linux-packages.sh"
+          ./scripts/build-linux-packages.sh "$APP_NAME" "$APP_VERSION" "artifacts/${{ matrix.rid }}/package-root" "artifacts" "dropandforget" "${{ matrix.rid }}"
+
+      - name: Create checksums ${{ matrix.rid }}
+        run: |
+          for asset in \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.tar.gz" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.deb" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.rpm"
+          do
+            shasum -a 256 "$asset" > "$asset.sha256"
+          done
+
+      - name: Generate artifact attestation ${{ matrix.rid }}
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            artifacts/${{ env.APP_NAME }}-*-${{ matrix.rid }}.tar.gz
+            artifacts/${{ env.APP_NAME }}-*-${{ matrix.rid }}.deb
+            artifacts/${{ env.APP_NAME }}-*-${{ matrix.rid }}.rpm
+
+      - name: Save attestation bundle ${{ matrix.rid }}
+        run: |
+          cp "${{ steps.attest.outputs.bundle-path }}" "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.attestation.jsonl"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ env.RELEASE_TAG }}" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.tar.gz" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.tar.gz.sha256" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.deb" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.deb.sha256" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.rpm" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.rpm.sha256" \
+            "artifacts/$APP_NAME-$APP_VERSION-${{ matrix.rid }}.attestation.jsonl" \
+            --clobber
+
+  update-release-notes:
+    runs-on: ubuntu-latest
+    needs:
+      - build-windows
+      - build-macos
+      - build-linux
+
+    steps:
+      - name: Build download table
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TAG_NAME: ${{ env.RELEASE_TAG }}
+        run: |
+          gh release view "$TAG_NAME" --repo "$REPOSITORY" --json body --jq '.body // ""' > existing-body.md
+
+          python3 - <<'PY'
+          import os
+          import textwrap
+          from pathlib import Path
+
+          tag_name = os.environ["TAG_NAME"]
+          repository = os.environ["REPOSITORY"]
+          version = tag_name.removeprefix("v")
+          base_url = f"https://github.com/{repository}/releases/download/{tag_name}"
+
+          download_table = textwrap.dedent(f"""\
+          <!-- downloads:start -->
+          ## Download DropAndForget {version}
+
+          | File | Platform | Checksum | Attestation |
+          | --- | --- | --- | --- |
+          | [DropAndForget-{version}-macos-arm64.dmg]({base_url}/DropAndForget-{version}-macos-arm64.dmg) | Apple Silicon macOS | [checksum]({base_url}/DropAndForget-{version}-macos-arm64.dmg.sha256) | [bundle]({base_url}/DropAndForget-{version}-macos-arm64.attestation.jsonl) |
+          | [DropAndForget-{version}-macos-x64.dmg]({base_url}/DropAndForget-{version}-macos-x64.dmg) | Intel macOS | [checksum]({base_url}/DropAndForget-{version}-macos-x64.dmg.sha256) | [bundle]({base_url}/DropAndForget-{version}-macos-x64.attestation.jsonl) |
+          | [DropAndForget-{version}-win-x64.zip]({base_url}/DropAndForget-{version}-win-x64.zip) | x64 Windows | [checksum]({base_url}/DropAndForget-{version}-win-x64.zip.sha256) | [bundle]({base_url}/DropAndForget-{version}-win-x64.attestation.jsonl) |
+          | [DropAndForget-{version}-win-arm64.zip]({base_url}/DropAndForget-{version}-win-arm64.zip) | ARM64 Windows | [checksum]({base_url}/DropAndForget-{version}-win-arm64.zip.sha256) | [bundle]({base_url}/DropAndForget-{version}-win-arm64.attestation.jsonl) |
+          | [DropAndForget-{version}-linux-x64.tar.gz]({base_url}/DropAndForget-{version}-linux-x64.tar.gz) | x64 Linux tarball | [checksum]({base_url}/DropAndForget-{version}-linux-x64.tar.gz.sha256) | [bundle]({base_url}/DropAndForget-{version}-linux-x64.attestation.jsonl) |
+          | [DropAndForget-{version}-linux-arm64.tar.gz]({base_url}/DropAndForget-{version}-linux-arm64.tar.gz) | ARM64 Linux tarball | [checksum]({base_url}/DropAndForget-{version}-linux-arm64.tar.gz.sha256) | [bundle]({base_url}/DropAndForget-{version}-linux-arm64.attestation.jsonl) |
+          | [DropAndForget-{version}-linux-x64.deb]({base_url}/DropAndForget-{version}-linux-x64.deb) | x64 Linux `.deb` | [checksum]({base_url}/DropAndForget-{version}-linux-x64.deb.sha256) | [bundle]({base_url}/DropAndForget-{version}-linux-x64.attestation.jsonl) |
+          | [DropAndForget-{version}-linux-arm64.deb]({base_url}/DropAndForget-{version}-linux-arm64.deb) | ARM64 Linux `.deb` | [checksum]({base_url}/DropAndForget-{version}-linux-arm64.deb.sha256) | [bundle]({base_url}/DropAndForget-{version}-linux-arm64.attestation.jsonl) |
+          | [DropAndForget-{version}-linux-x64.rpm]({base_url}/DropAndForget-{version}-linux-x64.rpm) | x64 Linux `.rpm` | [checksum]({base_url}/DropAndForget-{version}-linux-x64.rpm.sha256) | [bundle]({base_url}/DropAndForget-{version}-linux-x64.attestation.jsonl) |
+          | [DropAndForget-{version}-linux-arm64.rpm]({base_url}/DropAndForget-{version}-linux-arm64.rpm) | ARM64 Linux `.rpm` | [checksum]({base_url}/DropAndForget-{version}-linux-arm64.rpm.sha256) | [bundle]({base_url}/DropAndForget-{version}-linux-arm64.attestation.jsonl) |
+
+          ## Verifying GitHub Artifact Attestations
+
+          Verify against GitHub directly:
+
+          ```bash
+          gh attestation verify <downloaded-artifact> --repo {repository}
+          ```
+
+          Or verify with a downloaded attestation bundle from this release:
+
+          ```bash
+          gh attestation verify <downloaded-artifact> --bundle <downloaded-bundle>
+          ```
+
+          <!-- downloads:end -->""")
+
+          Path("download-table.md").write_text(download_table.strip() + "\n")
+
+          start = "<!-- downloads:start -->"
+          end = "<!-- downloads:end -->"
+
+          existing = Path("existing-body.md").read_text()
+          generated = Path("download-table.md").read_text().strip()
+
+          if start in existing and end in existing:
+              before = existing.split(start, 1)[0].rstrip()
+              after = existing.split(end, 1)[1].lstrip()
+              pieces = [generated]
+              if before:
+                  pieces.append(before)
+              if after:
+                  pieces.append(after)
+              merged = "\n\n".join(piece for piece in pieces if piece)
+          elif existing.strip():
+              merged = generated + "\n\n" + existing.strip()
+          else:
+              merged = generated
+
+          Path("release-body.md").write_text(merged + "\n")
+          PY
+
+      - name: Update release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: gh release edit "${{ env.RELEASE_TAG }}" --repo "$REPOSITORY" --notes-file release-body.md

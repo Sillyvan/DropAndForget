@@ -1,0 +1,8 @@
+lib-src/
+bin/
+obj/
+.DS_Store
+artifacts/
+.vs/
+*.user
+*.suo

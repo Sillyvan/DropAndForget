@@ -1,0 +1,25 @@
+﻿<Styles
+    x:Class="DropAndForget.UI.AppTheme"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Constants.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Button/Button.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/TextBox/TextBox.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/CheckBox/CheckBox.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Card/Card.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Loading/Loading.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/ToolTip/ToolTip.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Dialog/SimpleDialog.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Dialog/DialogHost.axaml" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Window/Window.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Themes/Light.axaml" x:Key="Light" />
+                <ResourceInclude Source="avares://DropAndForget/UI/Components/Themes/Dark.axaml" x:Key="Dark" />
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+</Styles>
