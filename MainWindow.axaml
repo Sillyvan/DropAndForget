@@ -1,0 +1,914 @@
+<ui:Window xmlns="https://github.com/avaloniaui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                                xmlns:vm="using:DropAndForget.ViewModels"
+                xmlns:model="using:DropAndForget.Models"
+               xmlns:ui="clr-namespace:DropAndForget.UI;assembly=DropAndForget"
+                mc:Ignorable="d"
+                x:Name="RootWindow"
+                x:Class="DropAndForget.MainWindow"
+                x:DataType="vm:MainWindowViewModel"
+                Width="980"
+                Height="760"
+                MinWidth="820"
+                MinHeight="620"
+                Title="DropAndForget"
+                ShowBottomBorder="True"
+                ShowTitlebarBackground="True"
+                TitleBarAnimationEnabled="True">
+
+    <ui:Window.Hosts>
+        <Controls>
+            <ui:DialogHost Manager="{Binding DialogManager}"
+                            Owner="{Binding RelativeSource={RelativeSource AncestorType=ui:Window}}" />
+        </Controls>
+    </ui:Window.Hosts>
+
+    <ui:Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="ContextMenuBackgroundBrush" Color="#FCFCFD" />
+                    <SolidColorBrush x:Key="ContextMenuBorderBrush" Color="#E4E4E7" />
+                    <SolidColorBrush x:Key="ContextMenuItemHoverBrush" Color="#F4F4F5" />
+                    <SolidColorBrush x:Key="ContextMenuItemPressedBrush" Color="#EAEAF0" />
+                    <SolidColorBrush x:Key="DropOverlayBackdropBrush" Color="#80F8FAFC" />
+                    <SolidColorBrush x:Key="DropOverlayBlurBrush" Color="#40FFFFFF" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="ContextMenuBackgroundBrush" Color="#18181B" />
+                    <SolidColorBrush x:Key="ContextMenuBorderBrush" Color="#27272A" />
+                    <SolidColorBrush x:Key="ContextMenuItemHoverBrush" Color="#27272A" />
+                    <SolidColorBrush x:Key="ContextMenuItemPressedBrush" Color="#323238" />
+                    <SolidColorBrush x:Key="DropOverlayBackdropBrush" Color="#A0090B11" />
+                    <SolidColorBrush x:Key="DropOverlayBlurBrush" Color="#26000000" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </ui:Window.Resources>
+
+    <ui:Window.Styles>
+        <Style Selector="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource ContextMenuBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ContextMenuBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="6" />
+        </Style>
+
+        <Style Selector="ContextMenu MenuItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="Padding" Value="12,9" />
+            <Setter Property="Transitions">
+                <Transitions />
+            </Setter>
+        </Style>
+
+        <Style Selector="ContextMenu MenuItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style Selector="ContextMenu MenuItem:pointerover">
+            <Setter Property="Background" Value="{DynamicResource ContextMenuItemHoverBrush}" />
+        </Style>
+
+        <Style Selector="ContextMenu MenuItem:pressed">
+            <Setter Property="Background" Value="{DynamicResource ContextMenuItemHoverBrush}" />
+        </Style>
+
+        <Style Selector="ContextMenu MenuItem:selected">
+            <Setter Property="Background" Value="{DynamicResource ContextMenuItemHoverBrush}" />
+        </Style>
+
+        <Style Selector="ContextMenu MenuItem:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="RowBackground" Value="Transparent" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderColor}" />
+            <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridColumnHeader">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Background" Value="{DynamicResource BackgroundColor}" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridCell">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
+        </Style>
+
+        <Style Selector="Button.breadcrumb-drop-target">
+            <Setter Property="Background" Value="{DynamicResource BackgroundTertiaryColor}" />
+            <Setter Property="BorderBrush" Value="#82F6" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridCell:current">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SecondaryColor}" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridCell:focus-visible">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SecondaryColor}" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridCell:current /template/ Border">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SecondaryColor}" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridCell:focus-visible /template/ Border">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SecondaryColor}" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridCell:current /template/ Rectangle">
+            <Setter Property="StrokeThickness" Value="0" />
+            <Setter Property="Stroke" Value="Transparent" />
+            <Setter Property="Fill" Value="Transparent" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridCell:focus-visible /template/ Rectangle">
+            <Setter Property="StrokeThickness" Value="0" />
+            <Setter Property="Stroke" Value="Transparent" />
+            <Setter Property="Fill" Value="Transparent" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridRow:pointerover /template/ DataGridCellsPresenter DataGridCell">
+            <Setter Property="Background" Value="{DynamicResource GhostColor}" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridRow:selected /template/ DataGridCellsPresenter DataGridCell">
+            <Setter Property="Background" Value="{DynamicResource SecondaryColor}" />
+        </Style>
+
+        <Style Selector="DataGrid#BucketItemsGrid DataGridRow:selected TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ForegroundColor}" />
+        </Style>
+
+        <Style Selector="Border#BucketDropOverlay">
+            <Setter Property="Background" Value="#CC0A0A0A" />
+        </Style>
+
+        <Style Selector="Border#BucketDropOverlay:pointerover">
+            <Setter Property="Background" Value="#CC0A0A0A" />
+        </Style>
+    </ui:Window.Styles>
+
+    <Grid RowDefinitions="*,Auto">
+        <Grid Margin="20"
+              Row="0">
+            <ScrollViewer DataContext="{Binding Setup}"
+                          x:DataType="vm:ConnectionSetupViewModel"
+                          IsVisible="{Binding $parent[ui:Window].((vm:MainWindowViewModel)DataContext).IsSetupViewVisible}">
+                <StackPanel Spacing="0">
+
+                    <!-- Header -->
+                    <Grid ColumnDefinitions="Auto,*"
+                          Margin="0,0,0,24">
+                        <Button Classes="Ghost"
+                                Command="{Binding $parent[ui:Window].((vm:MainWindowViewModel)DataContext).ShowBucketCommand}"
+                                HorizontalAlignment="Left"
+                                Padding="6,0"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="Back">
+                            <LucideIcon Kind="ArrowLeft"
+                                        Size="20"
+                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                        StrokeWidth="1.75" />
+                        </Button>
+                        <StackPanel Grid.Column="1"
+                                    Spacing="3"
+                                    VerticalAlignment="Center">
+                            <TextBlock FontSize="24" FontWeight="SemiBold" Text="Settings" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Spacing="12" Margin="0,0,0,28">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="Current connection" />
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="The active bucket and endpoint for this app." />
+                        </StackPanel>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="32">
+                            <StackPanel Spacing="3">
+                                <TextBlock Opacity="0.45" FontSize="11" Text="BUCKET" />
+                                <TextBlock Text="{Binding BucketSummary}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Opacity="0.45" FontSize="11" Text="ENDPOINT" />
+                                <TextBlock Text="{Binding EndpointSummary}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <Border Height="1"
+                            Background="{DynamicResource BorderColor}"
+                            Margin="0,0,0,28" />
+
+                    <!-- Step 1 — plain section -->
+                    <StackPanel Spacing="12" Margin="0,0,0,28">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="1 — Create a bucket" />
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="Create the bucket first. Use this exact name if you want." />
+                        </StackPanel>
+                        <TextBox IsReadOnly="True"
+                                 ui:ControlAssist.Label="Suggested bucket name"
+                                 Text="{Binding SuggestedBucketName}" />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Classes="Primary"
+                                    Command="{Binding UseSuggestedBucketNameCommand}"
+                                    Content="Use this name" />
+                            <Button Classes="Secondary"
+                                    Command="{Binding OpenCreateBucketCommand}"
+                                    Content="Open Create Bucket" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Height="1"
+                            Background="{DynamicResource BorderColor}"
+                            Margin="0,0,0,28" />
+
+                    <!-- Step 2 — plain section -->
+                    <StackPanel Spacing="12" Margin="0,0,0,28">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="2 — Create upload key" />
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="Create a user R2 token for this bucket only." />
+                        </StackPanel>
+                        <StackPanel Spacing="3" Opacity="0.75">
+                            <TextBlock Text="· Permission: Object Read &amp; Write" />
+                            <TextBlock Text="· Apply to specific buckets only" />
+                            <TextBlock Text="· Choose your bucket name" />
+                        </StackPanel>
+                        <TextBlock Opacity="0.55"
+                                   TextWrapping="Wrap"
+                                   Text="On the final page copy only Access Key ID, Secret Access Key, and Default endpoint. Ignore Token value." />
+                        <Button Classes="Secondary"
+                                HorizontalAlignment="Left"
+                                Command="{Binding OpenApiTokensCommand}"
+                                Content="Open Create Token" />
+                    </StackPanel>
+
+                    <Border Height="1"
+                            Background="{DynamicResource BorderColor}"
+                            Margin="0,0,0,28" />
+
+                    <StackPanel Spacing="12" Margin="0,0,0,28">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="3 — Connection details" />
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="Paste the values from Cloudflare here." />
+                        </StackPanel>
+
+                        <TextBox Text="{Binding EndpointOrAccountId}"
+                                 ui:ControlAssist.Label="Default endpoint"
+                                 PlaceholderText="https://accountid.r2.cloudflarestorage.com or account id" />
+
+                        <TextBox Text="{Binding BucketName}"
+                                 ui:ControlAssist.Label="Bucket name" />
+
+                        <TextBox Text="{Binding AccessKeyId}"
+                                 ui:ControlAssist.Label="Access key id" />
+
+                        <TextBox PasswordChar="*"
+                                 ui:ControlAssist.Label="Secret access key"
+                                 Text="{Binding SecretAccessKey}" />
+
+                        <TextBlock Opacity="0.5"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Text="Do not paste Cloudflare's Token value here. This app needs the S3 client credentials instead." />
+                    </StackPanel>
+
+                    <Border Height="1"
+                            Background="{DynamicResource BorderColor}"
+                            Margin="0,0,0,28" />
+
+                    <StackPanel Spacing="12" Margin="0,0,0,28">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="Storage mode" />
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="Cloud keeps direct R2 behavior. Sync keeps a local folder, watches it, and syncs in the background while the app stays open." />
+                        </StackPanel>
+
+                        <CheckBox Content="Enable sync mode"
+                                  IsEnabled="{Binding IsSyncToggleEnabled}"
+                                  IsChecked="{Binding IsSyncMode}" />
+
+                        <TextBlock IsVisible="{Binding !IsSyncToggleEnabled}"
+                                   Opacity="0.55"
+                                   TextWrapping="Wrap"
+                                   Text="Sync is blocked while encryption mode is on." />
+
+                        <TextBox IsReadOnly="True"
+                                 IsVisible="{Binding IsSyncMode}"
+                                 ui:ControlAssist.Label="Sync folder"
+                                 Text="{Binding SyncFolderPath}" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="10"
+                                    IsVisible="{Binding IsSyncMode}">
+                            <Button Classes="Secondary"
+                                    Click="PickSyncFolderButton_Click"
+                                    Content="Choose folder" />
+                            <TextBlock Opacity="0.55"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding SyncStatus}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Height="1"
+                            Background="{DynamicResource BorderColor}"
+                            Margin="0,0,0,28" />
+
+                    <StackPanel Spacing="12" Margin="0,0,0,20">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="Encryption mode" />
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding StorageModeDescription}" />
+                        </StackPanel>
+
+                        <CheckBox Content="Encrypt bucket before upload"
+                                  IsChecked="{Binding IsEncryptionEnabled}" />
+
+                        <TextBlock IsVisible="{Binding IsEncryptionEnabled}"
+                                   TextWrapping="Wrap"
+                                   Opacity="0.82"
+                                   Text="{Binding EncryptionTradeoffText}" />
+
+                        <TextBlock IsVisible="{Binding IsEncryptionEnabled}"
+                                   TextWrapping="Wrap"
+                                   Opacity="0.7"
+                                   Text="{Binding EncryptionLossesText}" />
+
+                        <TextBlock IsVisible="{Binding IsEncryptionEnabled}"
+                                   TextWrapping="Wrap"
+                                   Opacity="0.7"
+                                   Text="{Binding EncryptionPerformanceText}" />
+
+                        <StackPanel Spacing="10"
+                                    IsVisible="{Binding ShowEncryptedBucketDetectedActions}">
+                            <TextBlock FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Text="Encrypted bucket detected" />
+                            <TextBlock Opacity="0.82"
+                                       TextWrapping="Wrap"
+                                       Text="This bucket already uses encryption. Unlock it with the old passphrase, or delete the whole bucket to disable encryption." />
+                            <TextBox PasswordChar="*"
+                                     ui:ControlAssist.Label="Existing passphrase"
+                                     Text="{Binding DetectedBucketPassphrase}" />
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="10">
+                                <Button Classes="Primary"
+                                        Command="{Binding UnlockDetectedEncryptedBucketCommand}"
+                                        Content="Unlock now" />
+                                <Button Classes="Secondary"
+                                        Command="{Binding DeleteEncryptedBucketCommand}"
+                                        Content="Delete encrypted bucket" />
+                            </StackPanel>
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding DetectedBucketWarningText}" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="10"
+                                     IsVisible="{Binding ShowEncryptionSetupFields}">
+                            <TextBox PasswordChar="*"
+                                     ui:ControlAssist.Label="New passphrase"
+                                     Text="{Binding SetupPassphrase}" />
+                            <TextBox PasswordChar="*"
+                                     ui:ControlAssist.Label="Confirm passphrase"
+                                     Text="{Binding ConfirmSetupPassphrase}" />
+                            <TextBlock Opacity="0.55"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding EncryptionSetupHint}" />
+                        </StackPanel>
+
+                        <TextBlock IsVisible="{Binding ShowEncryptionAlreadyInitializedText}"
+                                   Opacity="0.55"
+                                   TextWrapping="Wrap"
+                                   Text="Bucket already initialized. Unlock from the main bucket view, then change passphrase there if needed." />
+
+                        <StackPanel Spacing="10"
+                                    DataContext="{Binding $parent[ui:Window].((vm:MainWindowViewModel)DataContext).Bucket}"
+                                    x:DataType="vm:BucketBrowserViewModel"
+                                    IsVisible="{Binding IsEncryptedUnlocked}">
+                            <TextBlock FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Text="Change passphrase" />
+                            <TextBox PasswordChar="*"
+                                     ui:ControlAssist.Label="New passphrase"
+                                     Text="{Binding NewPassphrase}" />
+                            <TextBox PasswordChar="*"
+                                     ui:ControlAssist.Label="Confirm new passphrase"
+                                     Text="{Binding ConfirmNewPassphrase}" />
+                            <Button Classes="Secondary"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding ChangePassphraseCommand}"
+                                    Content="Change passphrase" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Classes="Primary"
+                                Command="{Binding TestConnectionCommand}"
+                                Content="Test connection" />
+                        <Button Classes="Secondary"
+                                Command="{Binding SaveDraftCommand}"
+                                Content="Save draft" />
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+
+             <Grid x:Name="BucketView"
+                   DataContext="{Binding Bucket}"
+                   x:DataType="vm:BucketBrowserViewModel"
+                   IsVisible="{Binding $parent[ui:Window].((vm:MainWindowViewModel)DataContext).IsBucketViewVisible}"
+                  RowDefinitions="Auto,Auto,*"
+                  DragDrop.AllowDrop="True"
+                  Row="0">
+
+            <!-- Row 0: back button + title + actions on one line -->
+            <Grid ColumnDefinitions="Auto,*,Auto"
+                  Margin="0,0,0,16">
+                <Button Classes="Ghost"
+                        Command="{Binding GoUpCommand}"
+                        Padding="6,0"
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Go up">
+                    <LucideIcon Kind="ArrowLeft"
+                                Size="20"
+                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                StrokeWidth="1.75" />
+                </Button>
+
+                <TextBlock Grid.Column="1"
+                           FontSize="24"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Text="My Files" />
+
+                 <StackPanel Grid.Column="2"
+                             Orientation="Horizontal"
+                             Spacing="8"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Center">
+                    <Button Classes="Outline"
+                            Click="UploadFilesButton_Click"
+                            IsVisible="{Binding !IsEncryptedLocked}"
+                            Foreground="{DynamicResource ForegroundColor}"
+                            Padding="12,0"
+                            ToolTip.Tip="Upload files">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <LucideIcon Kind="Upload"
+                                        Size="16"
+                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                        StrokeWidth="1.75" />
+                            <TextBlock Text="Upload"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="Outline"
+                            Command="{Binding LockEncryptedBucketCommand}"
+                            IsVisible="{Binding IsEncryptedUnlocked}"
+                            Foreground="{DynamicResource ForegroundColor}"
+                            Padding="10,0"
+                            ToolTip.Tip="Lock now">
+                        <LucideIcon Kind="Lock"
+                                    Size="16"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    StrokeWidth="1.75" />
+                    </Button>
+                    <Button Classes="Outline"
+                            Command="{Binding RefreshBucketCommand}"
+                            Foreground="{DynamicResource ForegroundColor}"
+                            Padding="10,0"
+                            ToolTip.Tip="Refresh">
+                        <LucideIcon Kind="RefreshCw"
+                                    Size="16"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    StrokeWidth="1.75" />
+                    </Button>
+                     <Button Classes="Outline"
+                             Command="{Binding $parent[ui:Window].((vm:MainWindowViewModel)DataContext).ShowSetupCommand}"
+                            Foreground="{DynamicResource ForegroundColor}"
+                            Padding="10,0"
+                            ToolTip.Tip="Settings">
+                        <LucideIcon Kind="Settings"
+                                    Size="16"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    StrokeWidth="1.75" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Row 1: breadcrumbs + search -->
+             <Grid Grid.Row="1"
+                   ColumnDefinitions="*,Auto"
+                   ColumnSpacing="12"
+                   Margin="0,0,0,8"
+                   IsVisible="{Binding !IsEncryptedLocked}">
+                <ItemsControl ItemsSource="{Binding Breadcrumbs}"
+                              VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="model:BreadcrumbItem">
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <Button Classes="Ghost"
+                                        AttachedToVisualTree="BreadcrumbButton_AttachedToVisualTree"
+                                        DetachedFromVisualTree="BreadcrumbButton_DetachedFromVisualTree"
+                                        DragDrop.AllowDrop="True"
+                                        CornerRadius="8"
+                                        Padding="8,4"
+                                          Command="{Binding $parent[ItemsControl].((vm:BucketBrowserViewModel)DataContext).NavigateToBreadcrumbCommand}"
+                                        CommandParameter="{Binding Prefix}"
+                                        Content="{Binding Label}" />
+                                <TextBlock Text=" /"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.35"
+                                           IsVisible="{Binding !IsCurrent}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBox Grid.Column="1"
+                         Classes="Clearable"
+                         Width="260"
+                         VerticalAlignment="Center"
+                         Text="{Binding SearchText}"
+                         PlaceholderText="{Binding SearchWatermark}">
+                    <TextBox.InnerRightContent>
+                        <PathIcon Data="{x:Static ui:Icons.Search}"
+                                  Opacity="0.7"
+                                  Width="16" />
+                    </TextBox.InnerRightContent>
+                </TextBox>
+            </Grid>
+
+            <!-- Row 2: file table -->
+             <DataGrid x:Name="BucketItemsGrid"
+                       Grid.Row="2"
+                       IsVisible="{Binding !IsEncryptedLocked}"
+                       AutoGenerateColumns="False"
+                           IsReadOnly="True"
+                           CanUserReorderColumns="False"
+                           CanUserResizeColumns="True"
+                           CanUserSortColumns="True"
+                           DoubleTapped="BucketItemsList_DoubleTapped"
+                           GridLinesVisibility="Horizontal"
+                           HeadersVisibility="Column"
+                           ItemsSource="{Binding BucketItems}"
+                           KeyDown="BucketItemsList_KeyDown"
+                           LoadingRow="BucketItemsGrid_LoadingRow"
+                           PointerPressed="BucketItemsList_PointerPressed"
+                           SelectionChanged="BucketItemsGrid_SelectionChanged"
+                           SelectedItem="{Binding SelectedBucketItem}"
+                           UnloadingRow="BucketItemsGrid_UnloadingRow"
+                           SelectionMode="Extended">
+                    <DataGrid.ContextMenu>
+                        <ContextMenu Opening="BucketItemsContextMenu_Opening"
+                                     Closing="BucketItemsContextMenu_Closing">
+                            <MenuItem Click="NewFolderMenuItem_Click"
+                                      Header="New folder" />
+                            <MenuItem Click="PreviewBucketItemMenuItem_Click"
+                                      Header="Preview" />
+                            <MenuItem Click="DownloadBucketItemMenuItem_Click"
+                                      Header="Download" />
+                            <MenuItem Click="DownloadFolderAsZipMenuItem_Click"
+                                      Header="Download as zip" />
+                            <MenuItem Click="RenameBucketItemMenuItem_Click"
+                                      Header="Rename" />
+                            <MenuItem Click="DeleteBucketItemMenuItem_Click"
+                                      Header="Delete" />
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+                    <DataGrid.KeyBindings>
+                        <KeyBinding Command="{Binding OpenSelectedFolderCommand}" Gesture="Enter" />
+                        <KeyBinding Command="{Binding DeleteSelectedItemCommand}" Gesture="Delete" />
+                    </DataGrid.KeyBindings>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Sync"
+                                                Width="96"
+                                                IsVisible="{Binding IsSyncMode}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="vm:BucketListEntry">
+                                    <Grid HorizontalAlignment="Center">
+                                        <ToolTip.Tip>
+                                            <TextBlock Text="{Binding SyncStatusText}" />
+                                        </ToolTip.Tip>
+                                        <LucideIcon Kind="Check"
+                                                    Size="16"
+                                                    Foreground="{DynamicResource MutedColor}"
+                                                    StrokeWidth="1.75"
+                                                    IsVisible="{Binding IsSyncSynced}" />
+                                        <LucideIcon Kind="Clock3"
+                                                    Size="16"
+                                                    Foreground="{DynamicResource MutedColor}"
+                                                    StrokeWidth="1.75"
+                                                    IsVisible="{Binding IsSyncPending}" />
+                                        <LucideIcon Kind="RefreshCw"
+                                                    Size="16"
+                                                    Foreground="{DynamicResource MutedColor}"
+                                                    StrokeWidth="1.75"
+                                                    IsVisible="{Binding IsSyncing}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Name"
+                                                SortMemberPath="DisplayName"
+                                                Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="vm:BucketListEntry">
+                                    <Grid ColumnDefinitions="Auto,*"
+                                          Background="Transparent"
+                                          HorizontalAlignment="Stretch"
+                                          PointerPressed="BucketItem_PointerPressed">
+                                            <Grid Width="18"
+                                                  Height="18"
+                                                  Margin="0,0,10,0">
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="Folder"
+                                                                       IsVisible="{Binding IsFolder}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="FileImage"
+                                                                       IsVisible="{Binding IsImageFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="FileType"
+                                                                       IsVisible="{Binding IsPdfFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="Film"
+                                                                       IsVisible="{Binding IsVideoFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="FileMusic"
+                                                                       IsVisible="{Binding IsAudioFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="FileArchive"
+                                                                       IsVisible="{Binding IsArchiveFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="FileSpreadsheet"
+                                                                       IsVisible="{Binding IsSpreadsheetFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="FileCode"
+                                                                       IsVisible="{Binding IsCodeFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="FileText"
+                                                                       IsVisible="{Binding IsTextFile}" />
+                                                <LucideIcon Size="18"
+                                                                                                                                              VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource MutedColor}"
+                                                                       StrokeWidth="1.75"
+                                                                       Kind="File"
+                                                                       IsVisible="{Binding IsGenericFile}" />
+                                            </Grid>
+                                        <StackPanel Grid.Column="1"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Stretch">
+                                            <TextBlock IsVisible="{Binding !IsEditing}"
+                                                       Text="{Binding DisplayName}"
+                                                       TextWrapping="NoWrap"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip.Tip="{Binding DisplayName}" />
+                                            <TextBox IsVisible="{Binding IsEditing}"
+                                                       KeyDown="RenameTextBox_KeyDown"
+                                                       LostFocus="RenameTextBox_LostFocus"
+                                                       AttachedToVisualTree="RenameTextBox_AttachedToVisualTree"
+                                                       MinWidth="220"
+                                                      Text="{Binding EditName}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Binding="{Binding FolderPathDisplay}"
+                                            Header="Folder"
+                                            IsReadOnly="True"
+                                            SortMemberPath="FolderPath"
+                                            Width="220">
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding SizeText}"
+                                            Header="Size"
+                                            IsReadOnly="True"
+                                            SortMemberPath="SizeBytes"
+                                            Width="140" />
+                        <DataGridTextColumn Binding="{Binding ModifiedText}"
+                                            Header="Modified"
+                                            IsReadOnly="True"
+                                            SortMemberPath="ModifiedAt"
+                                            Width="190" />
+                    </DataGrid.Columns>
+                 </DataGrid>
+
+                <Border Grid.Row="2"
+                        IsVisible="{Binding IsEncryptedLocked}"
+                        BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="24"
+                        VerticalAlignment="Center"
+                        MaxWidth="560">
+                    <StackPanel Spacing="14">
+                        <TextBlock FontSize="22"
+                                   FontWeight="SemiBold"
+                                   Text="Encrypted bucket locked" />
+                        <TextBlock Opacity="0.72"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding UnlockHelpText}" />
+                        <TextBlock Opacity="0.72"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding EncryptionLossesText}" />
+                        <TextBox PasswordChar="*"
+                                 ui:ControlAssist.Label="Passphrase"
+                                 KeyDown="UnlockPassphraseTextBox_KeyDown"
+                                 Text="{Binding UnlockPassphrase}" />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Classes="Primary"
+                                    Command="{Binding UnlockEncryptedBucketCommand}"
+                                    Content="Unlock" />
+                             <Button Classes="Secondary"
+                                     Command="{Binding $parent[ui:Window].((vm:MainWindowViewModel)DataContext).ShowSetupCommand}"
+                                      Content="Settings" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+             </Grid>
+        </Grid>
+
+        <Border Grid.Row="1"
+                BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="0,1,0,0"
+                Padding="14,10">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto"
+                  ColumnSpacing="10"
+                  VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="6"
+                            VerticalAlignment="Center">
+                    <LucideIcon Kind="Folder"
+                                Size="14"
+                                VerticalAlignment="Center"
+                                Foreground="{Binding Foreground, ElementName=FooterFoldersText}"
+                                StrokeWidth="1.75" />
+                    <TextBlock x:Name="FooterFoldersText"
+                               Foreground="{DynamicResource MutedColor}"
+                               VerticalAlignment="Center"
+                               LineHeight="14"
+                               Opacity="0.72"
+                               Text="{Binding Bucket.VisibleFolderCount}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="6"
+                            VerticalAlignment="Center">
+                    <LucideIcon Kind="File"
+                                Size="14"
+                                VerticalAlignment="Center"
+                                Foreground="{Binding Foreground, ElementName=FooterFilesText}"
+                                StrokeWidth="1.75" />
+                    <TextBlock x:Name="FooterFilesText"
+                               Foreground="{DynamicResource MutedColor}"
+                               VerticalAlignment="Center"
+                               LineHeight="14"
+                               Opacity="0.72"
+                               Text="{Binding Bucket.VisibleFileCount}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="6"
+                            VerticalAlignment="Center">
+                    <LucideIcon Kind="HardDrive"
+                                Size="14"
+                                VerticalAlignment="Center"
+                                Foreground="{Binding Foreground, ElementName=FooterSizeText}"
+                                StrokeWidth="1.75" />
+                    <TextBlock x:Name="FooterSizeText"
+                               Foreground="{DynamicResource MutedColor}"
+                               VerticalAlignment="Center"
+                               LineHeight="14"
+                                Opacity="0.72"
+                                 Text="{Binding Bucket.VisibleTotalSizeText}" />
+                </StackPanel>
+
+                <TextBlock Grid.Column="3"
+                           Foreground="{DynamicResource MutedColor}"
+                           VerticalAlignment="Center"
+                           Opacity="0.72"
+                           Text="{Binding Bucket.SyncFooterText}" />
+
+                <StackPanel Grid.Column="5"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding IsBusy}">
+                    <TextBlock Opacity="0.72"
+                               Text="Working..." />
+                </StackPanel>
+
+                <TextBlock Grid.Column="6"
+                           TextWrapping="NoWrap"
+                           TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Opacity="0.55"
+                           Text="{Binding StatusMessage}" />
+            </Grid>
+        </Border>
+
+        <Border x:Name="BucketDropOverlay"
+                Grid.RowSpan="2"
+                IsHitTestVisible="False"
+                IsVisible="{Binding IsDropTargetActive}"
+                Background="{DynamicResource DropOverlayBackdropBrush}">
+            <Grid>
+                <Border Background="{DynamicResource DropOverlayBlurBrush}">
+                    <Border.Effect>
+                        <BlurEffect Radius="22" />
+                    </Border.Effect>
+                </Border>
+
+                <StackPanel Spacing="10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <LucideIcon Kind="Upload"
+                                Size="34"
+                                HorizontalAlignment="Center"
+                                Foreground="{Binding Foreground, ElementName=DropOverlayText}"
+                                StrokeWidth="1.75" />
+                    <TextBlock x:Name="DropOverlayText"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource ForegroundColor}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Text="Drop files to upload" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</ui:Window>

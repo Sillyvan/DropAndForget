@@ -1,0 +1,210 @@
+﻿<ResourceDictionary
+    xmlns="https://github.com/avaloniaui"
+    xmlns:ui="clr-namespace:DropAndForget.UI"
+    xmlns:chrome="clr-namespace:Avalonia.Controls.Chrome;assembly=Avalonia.Controls"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://DropAndForget/UI/Components/Controls/Constants.axaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <ControlTheme TargetType="Button" x:Key="WindowButtonStyle">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource ForegroundColor}" />
+        <Setter Property="Background" Value="{DynamicResource BackgroundColor}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Duration="0.001" Property="Background" />
+            </Transitions>
+        </Setter>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}">
+                    <ContentPresenter
+                        Content="{TemplateBinding Content}"
+                        Foreground="{TemplateBinding Foreground}"
+                        Height="{TemplateBinding Height}"
+                        HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        Padding="{TemplateBinding Padding}"
+                        RecognizesAccessKey="True"
+                        VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Width="{TemplateBinding Width}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Background" Value="{DynamicResource WindowButtonHoverColor}" />
+        </Style>
+        <Style Selector="^.Close">
+            <Style Selector="^:pointerover">
+                <Setter Property="Background" Value="#C42B1C" />
+                <Setter Property="Foreground" Value="#FFFFFF" />
+            </Style>
+        </Style>
+        <Style Selector="^:disabled">
+            <Setter Property="Opacity" Value="0.50" />
+        </Style>
+    </ControlTheme>
+
+    <ControlTheme TargetType="ui:Window" x:Key="WindowTheme">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource WindowBackgroundColor}" />
+        <Setter Property="TransparencyLevelHint" Value="None" />
+        <Setter Property="WindowDecorations" Value="Full" />
+        <Setter Property="ExtendClientAreaToDecorationsHint" Value="False" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource ForegroundColor}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid Background="{TemplateBinding Background}"
+                      Margin="{TemplateBinding Margin}">
+                    <Panel Name="PART_Root">
+                        <DockPanel LastChildFill="True">
+                            <Panel Background="{DynamicResource TitleBarBackgroundColor}"
+                                   DockPanel.Dock="Top"
+                                   Height="32"
+                                   IsVisible="{TemplateBinding IsMenuVisible}">
+                                <ContentPresenter
+                                    Content="{TemplateBinding MenuBarContent}"
+                                    Margin="8,0,8,4"
+                                    Name="MenuBar" />
+                            </Panel>
+                            <ContentPresenter
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                IsHitTestVisible="True"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </DockPanel>
+                    </Panel>
+                    <ItemsControl ItemsSource="{Binding Hosts, RelativeSource={RelativeSource TemplatedParent}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Panel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+
+        <Style Selector="^[ShowTitlebarBackground=False] /template/ ContentPresenter#MenuBar">
+            <Setter Property="Margin" Value="10,0,0,7" />
+        </Style>
+        <Style Selector="^[WindowState=Maximized] /template/ PathIcon#MaximizeIcon">
+            <Setter Property="Data" Value="{x:Static ui:Icons.WindowRestore}" />
+        </Style>
+        <Style Selector="^[WindowState=Normal] /template/ PathIcon#MaximizeIcon">
+            <Setter Property="Data" Value="{x:Static ui:Icons.WindowMaximize}" />
+        </Style>
+        <Style Selector="^[IsTitleBarVisible=True]">
+            <Style Selector="^[TitleBarAnimationEnabled=True]">
+                <Style Selector="^ /template/ LayoutTransformControl#LayoutTransform">
+                    <Style.Animations>
+                        <Animation
+                            Duration="0:0:0.35"
+                            Easing="CircularEaseOut"
+                            FillMode="Forward">
+                            <KeyFrame Cue="0%">
+                                <Setter Property="ScaleTransform.ScaleY" Value="0" />
+                                <Setter Property="IsVisible" Value="True" />
+                            </KeyFrame>
+                            <KeyFrame Cue="100%">
+                                <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                            </KeyFrame>
+                        </Animation>
+                    </Style.Animations>
+                </Style>
+            </Style>
+            <Style Selector="^[IsActive=False]">
+                <Style Selector="^ /template/ Button#PART_MinimizeButton">
+                    <Style Selector="^ PathIcon">
+                        <Setter Property="Opacity" Value="0.5" />
+                    </Style>
+                    <Style Selector="^:pointerover PathIcon">
+                        <Setter Property="Opacity" Value="1" />
+                    </Style>
+                </Style>
+                <Style Selector="^ /template/ Button#PART_MaximizeButton">
+                    <Style Selector="^ PathIcon">
+                        <Setter Property="Opacity" Value="0.5" />
+                    </Style>
+                    <Style Selector="^:pointerover PathIcon">
+                        <Setter Property="Opacity" Value="1" />
+                    </Style>
+                </Style>
+                <Style Selector="^ /template/ Button#PART_CloseButton">
+                    <Style Selector="^ PathIcon">
+                        <Setter Property="Opacity" Value="0.5" />
+                    </Style>
+                    <Style Selector="^:pointerover PathIcon">
+                        <Setter Property="Opacity" Value="1" />
+                    </Style>
+                </Style>
+                <Style Selector="^ StackPanel#AppTitlePanel">
+                    <Setter Property="Opacity" Value="0.60" />
+                </Style>
+                <Style Selector="^ ContentPresenter#RightButtons">
+                    <Setter Property="Opacity" Value="0.60" />
+                </Style>
+            </Style>
+            <Style Selector="^[TitleBarAnimationEnabled=False]">
+                <Style Selector="^ /template/ LayoutTransformControl#LayoutTransform">
+                    <Setter Property="IsVisible" Value="True" />
+                </Style>
+            </Style>
+            <Style Selector="^[IsActive=True]">
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
+                <Style Selector="^ /template/ Button#PART_CloseButton">
+                    <Style Selector="^:pointerover">
+                        <Setter Property="Foreground" Value="{DynamicResource DestructiveForegroundColor}" />
+                    </Style>
+                </Style>
+            </Style>
+        </Style>
+        <Style Selector="^[IsTitleBarVisible=False]">
+            <Style Selector="^[TitleBarAnimationEnabled=True]">
+                <Style Selector="^ /template/ LayoutTransformControl#LayoutTransform">
+                    <Style.Animations>
+                        <Animation
+                            Duration="0:0:0.35"
+                            Easing="CircularEaseOut"
+                            FillMode="Forward">
+                            <KeyFrame Cue="0%">
+                                <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                            </KeyFrame>
+                            <KeyFrame Cue="100%">
+                                <Setter Property="ScaleTransform.ScaleY" Value="0" />
+                                <Setter Property="IsVisible" Value="False" />
+                            </KeyFrame>
+                        </Animation>
+                    </Style.Animations>
+                </Style>
+            </Style>
+            <Style Selector="^[TitleBarAnimationEnabled=False]">
+                <Style Selector="^ /template/ LayoutTransformControl#LayoutTransform">
+                    <Setter Property="IsVisible" Value="False" />
+                </Style>
+            </Style>
+        </Style>
+
+        <Style Selector="^ /template/ Border#PART_TitleBarBackground">
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Background" Value="{DynamicResource TitleBarBackgroundColor}" />
+        </Style>
+        <Style Selector="^ /template/ StackPanel#ButtonsPanel">
+            <Setter Property="MinHeight" Value="32" />
+        </Style>
+    </ControlTheme>
+    <ControlTheme
+        BasedOn="{StaticResource WindowTheme}"
+        TargetType="ui:Window"
+        x:Key="{x:Type ui:Window}" />
+</ResourceDictionary>

@@ -1,0 +1,34 @@
+<ui:Window xmlns="https://github.com/avaloniaui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:ui="clr-namespace:DropAndForget.UI;assembly=DropAndForget"
+               x:Class="DropAndForget.TextPromptWindow"
+               Width="420"
+               Height="190"
+               CanResize="False"
+               ShowInTaskbar="False"
+               WindowStartupLocation="CenterOwner"
+               Title="Input">
+    <Grid RowDefinitions="*,Auto"
+          Margin="20">
+        <StackPanel Spacing="12">
+            <TextBlock x:Name="PromptTextBlock"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Text="Prompt" />
+            <TextBox x:Name="ValueTextBox" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,16,0,0">
+            <Button Classes="Secondary"
+                    Click="CancelButton_Click"
+                    Content="Cancel" />
+            <Button Classes="Primary"
+                    Click="ConfirmButton_Click"
+                    Content="OK" />
+        </StackPanel>
+    </Grid>
+</ui:Window>

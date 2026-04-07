@@ -1,0 +1,77 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                          xmlns:vm="using:DropAndForget.ViewModels"
+             x:Class="DropAndForget.PreviewDialogContent"
+             x:DataType="vm:PreviewDialogViewModel">
+    <Border Padding="16,24">
+        <Grid x:Name="LayoutRoot"
+              RowDefinitions="Auto,*"
+              Height="680"
+              MaxWidth="920"
+              MaxHeight="680"
+              MinWidth="320"
+              MinHeight="320"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              Container.Name="dialog"
+              Container.Sizing="Width">
+            <Grid.Styles>
+                <Style Selector="TextBlock#TitleTextBlock">
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+                <ContainerQuery Name="dialog" Query="max-width:640">
+                    <Style Selector="TextBlock#TitleTextBlock">
+                        <Setter Property="FontSize" Value="16" />
+                    </Style>
+                    <Style Selector="Border#PreviewBorder">
+                        <Setter Property="CornerRadius" Value="8" />
+                    </Style>
+                </ContainerQuery>
+            </Grid.Styles>
+            <StackPanel x:Name="HeaderPanel"
+                  Margin="0,0,0,14">
+                <TextBlock x:Name="TitleTextBlock"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Text="{Binding Title}" />
+                <StackPanel x:Name="PdfToolbar"
+                         Orientation="Horizontal"
+                         HorizontalAlignment="Left"
+                         IsVisible="{Binding IsPdf}"
+                         Spacing="8">
+                    <Button Classes="Ghost"
+                            Click="PreviousPageButton_Click"
+                            Padding="6,0"
+                            ToolTip.Tip="Previous page">
+                        <LucideIcon Kind="ChevronLeft"
+                                    Size="16"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    StrokeWidth="1.75" />
+                    </Button>
+                    <TextBlock x:Name="PdfPageTextBlock"
+                               VerticalAlignment="Center" />
+                    <Button Classes="Ghost"
+                            Click="NextPageButton_Click"
+                            Padding="6,0"
+                            ToolTip.Tip="Next page">
+                        <LucideIcon Kind="ChevronRight"
+                                    Size="16"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    StrokeWidth="1.75" />
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+
+            <Border x:Name="PreviewBorder"
+                    Grid.Row="1"
+                    BorderBrush="{DynamicResource BorderColor}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    ClipToBounds="True">
+                <ContentControl x:Name="PreviewHost" />
+            </Border>
+
+        </Grid>
+    </Border>
+</UserControl>
